@@ -1,4 +1,7 @@
 
+
+
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.*;
@@ -11,9 +14,10 @@ import java.io.*;
  class dbToJavaClass {
 
 	 private static ArrayList<Integer> indexList = new ArrayList<>();
-	 private static final int splitCount = 30;//5000 is good value, also 10_000 working
-	 private static final String className = "data";
-	 private static final String readingFile = "file.txt";
+	 private static  int splitCount = 4000;//5000 is good value, also 10_000 working
+	 private static  String className = "data";
+	 private static  String readingFile = "file.txt";
+	 private static  boolean isReadBinary = true;// if this was true should 'readingFile' was as hex value.(copied from win hex), else auto read binary
 
 
 	 private static  void _initialize() {
@@ -49,24 +53,48 @@ import java.io.*;
 
  	public static void main (String args[]) {
             //   System.out.println("Start...");
+
+		if(args.length == 4)// custom args
+		{
+			splitCount = Integer.valueOf(args[0]);
+			className = args[1];
+			readingFile = args[2];
+			isReadBinary = (args[3].equalsIgnoreCase("binary") ? true : false);
+		}
+
+		//System.out.println("//"+ args[0]);
+		//System.out.println("//"+ args[1]);
+		//System.out.println("//"+ args[2]);
+		//System.out.println("//"+ args[3]);
+
+		//=if(true)
+		//	return;
+
+
      //===
 		try
 		{
-			_initialize();
-			BufferedReader in = new BufferedReader(new FileReader(readingFile) );
-			String line;
-			int index = 0;
-			ArrayList<String> list = new ArrayList();
-			while((line = in.readLine())!=null)
+			if(isReadBinary)
 			{
-				String[] chr = line.split(",");
-				for(String ch : chr)
-				{
-					if(ch.length() == 4)
+				//=== read binary file
+				_initialize();
+				int index = 0;
+				ArrayList<String> list = new ArrayList();
+				FileInputStream fin = new FileInputStream(readingFile);
+
+				int len;
+				byte data[] = new byte[256];//256 buff or other
+
+				// Read bytes until EOF is encountered.
+				do {
+					len = fin.read(data);
+					for (int j = 0; j < len; j++)
 					{
+						//=System.out.printf("%02X ", data[j]);
+
 						index++;
-						String c = ch.replace("0x", "");
-						c = String.valueOf((byte) ((Character.digit(c.charAt(0), 16) << 4) + Character.digit(c.charAt(1), 16)));
+						String c = String.format("%02X", data[j]);
+						c = String.valueOf((byte) ((Character.digit(c.charAt(0), 16) << 4) + Character.digit(c.charAt(1), 16)));// c = byte vale as string (such as -10)
 
 						list.add(c);
 						if((index % splitCount) == 0)
@@ -74,18 +102,51 @@ import java.io.*;
 							showOut(list, (index/splitCount));
 							list.clear();
 						}
-					}
-					else
-					{
-						throw new Exception("Error in reading data file value, data values should be as hex value ('0xFF')");
-					}
 
+					}
+				} while (len != -1);
+
+				if((index % splitCount) != 0) {
+					showOut(list, (index/splitCount) + 1);//last section
 				}
+				_finalize(index);
+				//=== read binary file
+
 			}
-			if((index % splitCount) != 0) {
-				showOut(list, (index/splitCount) + 1);//last section
+			else
+			{
+				//=== read hex file
+				_initialize();
+				BufferedReader in = new BufferedReader(new FileReader(readingFile));
+				String line;
+				int index = 0;
+				ArrayList<String> list = new ArrayList();
+				while ((line = in.readLine()) != null) {
+					String[] chr = line.split(",");
+					for (String ch : chr) {
+						if (ch.length() == 4) {
+							index++;
+							String c = ch.replace("0x", "");
+							c = String.valueOf((byte) ((Character.digit(c.charAt(0), 16) << 4) + Character.digit(c.charAt(1), 16)));
+
+							list.add(c);
+							if ((index % splitCount) == 0) {
+								showOut(list, (index / splitCount));
+								list.clear();
+							}
+						} else {
+							throw new Exception("Error in reading data file value, data values should be as hex value ('0xFF')");
+						}
+
+					}
+				}
+				if ((index % splitCount) != 0) {
+					showOut(list, (index / splitCount) + 1);//last section
+				}
+				_finalize(index);
+				//=== read hex file
 			}
-			_finalize(index);
+
 
 		} catch (Exception e) {
 			e.printStackTrace();
