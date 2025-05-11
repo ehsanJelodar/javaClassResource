@@ -1,7 +1,3 @@
-
-
-
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.*;
@@ -17,7 +13,7 @@ import java.io.*;
 	 private static  int splitCount = 4000;//5000 is good value, also 10_000 working
 	 private static  String className = "data";
 	 private static  String readingFile = "file.txt";
-	 private static  boolean isReadBinary = true;// if this was true should 'readingFile' was as hex value.(copied from win hex), else auto read binary
+	 private static  boolean isReadBinary = true;// if this was true, the 'readingFile' parameter should be as a hex value (copied from Win Hex), else auto read binary
 
 
 	 private static  void _initialize() {
